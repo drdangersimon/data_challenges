@@ -43,6 +43,10 @@ def load_crime_stats(population_group=None, crime_list=None, provence=None):
     df = GeoDataFrame(df, crs=pop_stats.crs)
     # clean data frame
     df = df.drop(['sal_code_i','pr_name','sp_name', 'Police Station' , 'Incidents','weight'], axis=1)
+    # agg precint back into shapes
+    temp_df = df.groupby(['small_area', 'Year', 'Crime'])[['total_crime']].sum().round()
+    df = df.drop_duplicates(subset=['small_area', 'Year', 'Crime']).drop(['total_crime'], axis=1)
+    df = merge(df, temp_df, on=['small_area', 'Year', 'Crime'])
     return df
 
 
