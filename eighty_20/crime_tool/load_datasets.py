@@ -24,7 +24,7 @@ def load_crime_stats(population_group=None, crime_list=None, provence=None):
         police_stats = police_stats[police_stats['Crime'].isin(crime_list)]
     if provence is not None:
         police_stats = police_stats.query(f"Province == '{provence}'")
-    # poplulatiuon shape file
+    # population shape file
     pop_stats = clean_popluation_stats(data_path.joinpath('population/geo_export_3ec3ac74-ddff-4220-8007-b9b5643f79af.shp'))
     base_group = ['sal_code_i','pr_name', 'sp_name', 'geometry']
     if population_group is not None:
@@ -33,9 +33,9 @@ def load_crime_stats(population_group=None, crime_list=None, provence=None):
     if provence is not None:
         pop_stats = pop_stats.query(f"pr_name == '{provence}'")
     # shape id to weights
-    precint = clean_area_2_precint(data_path.joinpath('Precinct_to_small_area_weights.csv'))
+    precinct = clean_area_2_precint(data_path.joinpath('Precinct_to_small_area_weights.csv'))
     # munge data
-    df = merge(precint, pop_stats, left_on='small_area',right_on='sal_code_i')
+    df = merge(precinct, pop_stats, left_on='small_area',right_on='sal_code_i')
     df = merge(df, police_stats,left_on='precinct', right_on='Police Station')
     # calclate crime per shape file as proportion of precint weight
     df['total_crime'] = df.weight * df.Incidents
@@ -43,7 +43,7 @@ def load_crime_stats(population_group=None, crime_list=None, provence=None):
     df = GeoDataFrame(df, crs=pop_stats.crs)
     # clean data frame
     df = df.drop(['sal_code_i','pr_name','sp_name', 'Police Station' , 'Incidents','weight'], axis=1)
-    # agg precint back into shapes
+    # agg precinct back into shapes
     temp_df = df.groupby(['small_area', 'Year', 'Crime'])[['total_crime']].sum().round()
     df = df.drop_duplicates(subset=['small_area', 'Year', 'Crime']).drop(['total_crime'], axis=1)
     df = merge(df, temp_df, on=['small_area', 'Year', 'Crime'])
